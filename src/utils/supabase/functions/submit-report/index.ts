@@ -202,6 +202,11 @@ Classification guide:
     rendah    = minor risk (sharp edges, mild chemicals visible on packaging)
     menengah  = moderate risk (batteries, paint containers, medical packaging)
     tinggi    = high risk (chemical drums, syringes, industrial waste, biohazard)
+- waste_volume: (NOTE: Estimate by WEIGHT, not just surface area. Scattered light plastics take up space but are very light)
+    kurang_dari_30kg = Small amount or scattered street litter. Even if scattered over a wide area, light plastics/wrappers are < 30kg. (e.g., 1-3 regular household trash bags)
+    30_50kg          = Medium amount. A dense, concentrated pile of heavy waste, or 4-6 large filled trash bags.
+    50_100kg         = Large amount. An overflowing large dumpster, or a heavy pile of mixed waste (wood, dirt, many bags).
+    lebih_dari_100kg = Massive amount. Illegal dumping ground blocking a path, full pickup truck load of dense waste.
 - If is_waste is false, still return valid enum values as defaults but set confidence to "rendah".
 `.trim();
 
