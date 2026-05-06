@@ -10,44 +10,6 @@ WasteCare menggunakan model kecerdasan buatan berbasis *vision* untuk memverifik
 
 Berikut adalah urutan proses ketika pengguna menekan tombol "Kirim Laporan":
 
-```mermaid
-sequenceDiagram
-    participant User as Pengguna
-    participant Frontend as Aplikasi WasteCare
-    participant Edge as Supabase Edge Function
-    participant Vertex as Google Cloud Vertex AI (Gemini)
-    participant Storage as Supabase Storage
-    participant DB as Supabase Database
-
-    User->>Frontend: Ambil foto sampah & isi form
-    Frontend->>Edge: POST /submit-report (Base64 Image + Koordinat GPS)
-    
-    rect rgb(240, 248, 255)
-        Note right of Edge: Tahap Validasi & Auth
-        Edge->>Edge: Verifikasi Sesi Pengguna
-        Edge->>Edge: Validasi ukuran (<10MB) & ekstensi gambar
-        Edge->>Edge: Generate JWT untuk Autentikasi Google Cloud
-    end
-
-    rect rgb(240, 255, 240)
-        Note right of Edge: Tahap Klasifikasi AI
-        Edge->>Vertex: POST /generateContent (Image + Prompt)
-        Vertex-->>Edge: Return JSON (is_waste, waste_type, hazard_risk, volume)
-    end
-    
-    alt Bukan Sampah (is_waste: false & confidence: tinggi)
-        Edge-->>Frontend: HTTP 422 - Gambar ditolak (Bukan sampah)
-    else Gambar Tervalidasi
-        rect rgb(255, 250, 240)
-            Note right of Edge: Tahap Penyimpanan
-            Edge->>Storage: Upload Base64 ke bucket 'report-images'
-            Storage-->>Edge: Return Public URL
-            Edge->>DB: Eksekusi RPC insert_report_with_location
-            Edge->>DB: Insert Notifikasi ('Laporan Berhasil Dibuat')
-        end
-        Edge-->>Frontend: HTTP 200 - Laporan Sukses
-    end
-```
 
 ## 3. Tahapan Proses Detail
 
@@ -66,24 +28,24 @@ Agar dapat berkomunikasi dengan Google Cloud secara aman tanpa memaparkan kunci 
 Edge Function menyatukan gambar base64 dengan *System Prompt* yang ketat dan mengirimkannya ke endpoint `gemini-2.5-flash` di Vertex AI (`us-central1`).
 
 **Aturan Prompting (System Prompt):**
-AI diinstruksikan untuk merespons **HANYA** dengan objek JSON murni. Skema yang diwajibkan adalah:
+AI diinstruksikan untuk merespons **HANYA** dengan objek JSON murni (tanpa markdown). Skema yang diwajibkan adalah:
 - `is_waste` (boolean): Apakah gambar benar-benar berisi tumpukan sampah?
 - `confidence`: Tingkat keyakinan (tinggi/menengah/rendah).
 - `waste_type`: Jenis sampah (organik/anorganik/campuran).
 - `hazard_risk`: Tingkat bahaya (tidak_ada/rendah/menengah/tinggi).
-- `waste_volume`: Estimasi volume. **(Telah dioptimasi untuk mendeteksi *scattered light plastics* di jalanan agar tidak keliru memprediksi volume besar).**
+- `waste_volume`: Estimasi volume.
 - `location_category`: Kategori lokasi tempat sampah berada.
 
 ### D. Parsing & Validasi Hasil AI
 Setelah menerima respons JSON dari Vertex AI:
 1. Kode melakukan ekstraksi dan *repair* JSON jika AI secara tidak sengaja menyelipkan teks tambahan.
-2. Dilakukan pengecekan enum (*sanitization*). Jika AI mengembalikan nilai di luar kategori yang diizinkan, sistem mengubahnya menjadi nilai *default*.
-3. **Pencegahan Penyalahgunaan:** Jika AI mendeteksi gambar tersebut bukan sampah (`is_waste: false`) dengan tingkat kepercayaan (`confidence`) `"tinggi"`, proses langsung dihentikan.
+2. Dilakukan pengecekan enum (*sanitization*). Jika AI mengembalikan nilai di luar kategori yang diizinkan (misalnya `hazard_risk: "berbahaya_sekali"`), sistem akan mengubahnya menjadi nilai *default* (seperti `"tidak_ada"`).
+3. **Pencegahan Penyalahgunaan:** Jika AI mendeteksi gambar tersebut bukan sampah (`is_waste: false`) dengan tingkat kepercayaan (`confidence`) `"tinggi"`, proses langsung dihentikan dan pengguna mendapat peringatan error.
 
 ### E. Penyimpanan & Notifikasi
 Jika gambar lolos verifikasi AI:
 1. Gambar diubah menjadi *buffer* dan diunggah ke Supabase Storage (`report-images`).
-2. Edge Function memanggil fungsi database SQL (*RPC*) `insert_report_with_location` untuk menyimpan data pelapor, koordinat GPS (sebagai tipe *PostGIS POINT*), dan hasil klasifikasi.
+2. Edge Function memanggil fungsi database SQL (*RPC*) `insert_report_with_location` untuk menyimpan data pelapor, koordinat GPS (sebagai tipe *PostGIS POINT*), dan hasil klasifikasi (gabungan dari AI dan input manual pengguna).
 3. Sebuah entri baru ditambahkan ke tabel `notifications`, memicu notifikasi masuk di aplikasi pengguna.
 4. Edge Function mengembalikan respons sukses ke Frontend.
 
@@ -92,21 +54,20 @@ Jika gambar lolos verifikasi AI:
 Untuk meningkatkan akurasi dan skalabilitas sistem pada level produksi/profesional, berikut adalah beberapa strategi pengembangan yang dapat diimplementasikan:
 
 ### A. Estimasi Berat Sampah yang Lebih Akurat
-Mengestimasi berat (kg) murni dari foto 2D sangatlah sulit karena AI tidak bisa melihat kepadatan (massa jenis) suatu material.
+Mengestimasi berat (kg) murni dari foto 2D sangatlah sulit karena AI tidak bisa melihat kepadatan (massa jenis) suatu material (contoh: sekantong besar styrofoam jauh lebih ringan dari sekantong kecil tanah basah).
 **Rencana Solusi:**
-- **Peningkatan Prompt (Interim):** Menambahkan *Visual Anchors* pada prompt seperti yang telah dilakukan saat ini (membedakan *"scattered light plastics"* dengan sampah padat) untuk mencegah bias luas permukaan.
-- **AI Estimasi Volume + Material:** Melatih model spesifik untuk fokus mengestimasi **volume dimensi 3D** dan **jenis material**, kemudian mengalikannya dengan rata-rata massa jenis material tersebut.
-- **Human-in-the-Loop:** Berikan estimasi rentang (contoh: 5kg - 20kg) oleh AI, namun tetap berikan fitur input manual bagi petugas untuk memasukkan berat presisi (terutama jika terintegrasi timbangan IoT).
+- **AI Estimasi Volume + Material:** Latih model atau perbaiki prompt untuk fokus mengestimasi **volume/dimensi** (dengan membandingkannya dengan objek sekitar seperti jalan atau mobil) dan **jenis material**. Sistem kemudian mengalikan volume dengan rata-rata massa jenis material tersebut untuk mendapatkan estimasi berat.
+- **Human-in-the-Loop:** Berikan estimasi rentang (contoh: 5kg - 20kg) oleh AI, namun tetap berikan fitur input manual bagi petugas/pelapor untuk memasukkan berat presisi (terutama jika terintegrasi dengan timbangan IoT di masa depan).
 
 ### B. Pengayaan Konteks Bahaya (Hazard Risk) via Geolocation API
-Saat ini AI hanya melihat gambar. Jika sampah medis berada di dekat rumah sakit, risiko bahayanya jauh lebih tinggi, namun AI tidak tahu lokasinya.
+Saat ini AI hanya melihat gambar. Jika sampah medis berada di dekat rumah sakit, risiko bahayanya jauh lebih tinggi, namun AI tidak tahu di mana lokasi persisnya hanya dari foto.
 **Rencana Solusi:**
 - **Reverse Geocoding / Google Places API:** Sebelum mengirim data ke Vertex AI, Edge Function memanggil API Maps menggunakan `latitude` dan `longitude` pelapor untuk mendeteksi landmark terdekat.
-- **Contextual Prompting:** Sistem menyuntikkan data tersebut ke dalam prompt AI. (Contoh prompt: *"Perhatian: Sampah ini berlokasi 50 meter dari Rumah Sakit Umum. Evaluasi hazard_risk dengan lebih ketat."*)
+- **Contextual Prompting:** Sistem menyuntikkan data tersebut ke dalam prompt AI. (Contoh prompt: *"Perhatian: Sampah ini berlokasi 50 meter dari Rumah Sakit Umum. Tolong evaluasi hazard_risk dengan mempertimbangkan kemungkinan limbah medis berbahaya."*)
 
 ### C. Self-Correction & Multi-Agent Validation
-Untuk meminimalisir halusinasi atau kesalahan klasifikasi awal dari model vision tunggal.
+Untuk meminimalisir halusinasi atau kesalahan klasifikasi awal dari model vision.
 **Rencana Solusi:**
 - Terapkan alur **Multi-Step Verification**: 
   1. *Model 1 (Vision Fast)*: Ekstraksi fitur dasar dari gambar.
-  2. *Model 2 (Reasoning/Pro)*: Menerima output JSON dari Model 1, konteks lokasi (sekolah/RS), dan gambar aslinya, lalu memverifikasi ulang apakah klasifikasi `hazard_risk` dan `waste_type` sudah sangat tepat dan logis.
+  2. *Model 2 (Reasoning/Pro)*: Menerima output JSON dari Model 1, konteks lokasi (sekolah/RS), dan gambar aslinya, lalu memverifikasi ulang apakah klasifikasi `hazard_risk` dan `waste_type` sudah tepat. Jika ada ketidaksesuaian logika, Model 2 akan mengoreksinya sebelum disimpan ke database.
