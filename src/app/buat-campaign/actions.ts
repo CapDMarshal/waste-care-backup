@@ -10,6 +10,7 @@ interface CreateCampaignInput {
   start_time: string
   end_time: string
   max_participants: number
+  min_participants: number
   report_id: number
   organizer_name: string
   organizer_type: 'personal' | 'organization'

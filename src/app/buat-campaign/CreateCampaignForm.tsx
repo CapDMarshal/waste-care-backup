@@ -15,6 +15,7 @@ interface CampaignFormData {
   date: string;
   time: string;
   maxParticipants: number;
+  minParticipants: number;
   description: string;
   organizerType: OrganizerType;
   organizerName: string;
@@ -34,6 +35,7 @@ export default function CreateCampaignForm() {
     date: '',
     time: '',
     maxParticipants: 2,
+    minParticipants: 0,
     description: '',
     organizerType: 'personal',
     organizerName: '',
@@ -70,7 +72,7 @@ export default function CreateCampaignForm() {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'maxParticipants' ? (value === '' ? ('' as any) : parseInt(value)) : value,
+      [name]: (name === 'maxParticipants' || name === 'minParticipants') ? (value === '' ? ('' as any) : parseInt(value)) : value,
     }));
   };
 
@@ -124,6 +126,7 @@ export default function CreateCampaignForm() {
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
         max_participants: formData.maxParticipants,
+        min_participants: formData.minParticipants,
         report_id: parseInt(reportId),
         organizer_name: formData.organizerName,
         organizer_type: formData.organizerType,
@@ -280,7 +283,20 @@ export default function CreateCampaignForm() {
               min={2}
               required
             />
-            <p className="text-xs text-gray-500 mt-1">Minimal 2 orang partisipan</p>
+            <p className="text-xs text-gray-500 mt-1 mb-4">Minimal 2 orang partisipan</p>
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Minimal Partisipan <span className="text-red-500">*</span>
+            </label>
+            <Input
+              type="number"
+              name="minParticipants"
+              value={formData.minParticipants}
+              onChange={handleInputChange}
+              min={0}
+              required
+            />
+            <p className="text-xs text-gray-500 mt-1">Campaign akan dibatalkan otomatis jika target minimal tidak tercapai (0 = tanpa minimal)</p>
           </div>
 
           <div>

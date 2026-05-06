@@ -166,6 +166,15 @@ export async function checkReportHasCampaign(reportId: number): Promise<boolean>
       } as never);
 
     if (error) throw error;
+
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      title: 'Berhasil Bergabung',
+      message: `Anda telah berhasil bergabung dengan campaign. Bersiaplah untuk berkontribusi!`,
+      type: 'campaign_update',
+      related_id: campaignId
+    });
+
     return true;
   }
 

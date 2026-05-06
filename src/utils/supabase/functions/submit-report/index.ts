@@ -443,6 +443,20 @@ serve(async (req: Request) => {
 
   const report = Array.isArray(insertData) ? insertData[0] : insertData;
 
+  // Insert notification for the user
+  const { error: notifError } = await adminClient.from('notifications').insert({
+    user_id: user.id,
+    title: 'Laporan Berhasil Dibuat',
+    message: 'Laporan Anda berhasil dikirim dan sedang menunggu tinjauan admin.',
+    type: 'report_status',
+    related_id: report.id
+  });
+  
+  if (notifError) {
+    console.error('Failed to create notification:', notifError);
+    // Non-blocking error, we still return success for the report
+  }
+
   // ── Return success ────────────────────────────────────────
   return json({
     success: true,

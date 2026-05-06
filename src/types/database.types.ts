@@ -62,8 +62,9 @@ export interface Database {
           start_time: string
           end_time: string
           max_participants: number
+          min_participants: number
           created_at: string
-          status: 'upcoming' | 'ongoing' | 'finished'
+          status: 'upcoming' | 'ongoing' | 'finished' | 'cancelled'
           report_id: number
           organizer_name: string
           organizer_type: 'personal' | 'organization'
@@ -75,8 +76,9 @@ export interface Database {
           start_time: string
           end_time: string
           max_participants?: number
+          min_participants?: number
           created_at?: string
-          status?: 'upcoming' | 'ongoing' | 'finished'
+          status?: 'upcoming' | 'ongoing' | 'finished' | 'cancelled'
           report_id: number
           organizer_name: string
           organizer_type: 'personal' | 'organization'
@@ -88,8 +90,9 @@ export interface Database {
           start_time?: string
           end_time?: string
           max_participants?: number
+          min_participants?: number
           created_at?: string
-          status?: 'upcoming' | 'ongoing' | 'finished'
+          status?: 'upcoming' | 'ongoing' | 'finished' | 'cancelled'
           report_id?: number
           organizer_name?: string
           organizer_type?: 'personal' | 'organization'
@@ -160,6 +163,38 @@ export interface Database {
           reviewed_by?: string | null
           reviewed_at?: string | null
           admin_notes?: string | null
+        }
+      }
+      notifications: {
+        Row: {
+          id: number
+          user_id: string
+          title: string
+          message: string
+          type: 'report_status' | 'campaign_reminder' | 'campaign_update' | 'system'
+          related_id: number | null
+          is_read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          user_id: string
+          title: string
+          message: string
+          type: 'report_status' | 'campaign_reminder' | 'campaign_update' | 'system'
+          related_id?: number | null
+          is_read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          user_id?: string
+          title?: string
+          message?: string
+          type?: 'report_status' | 'campaign_reminder' | 'campaign_update' | 'system'
+          related_id?: number | null
+          is_read?: boolean
+          created_at?: string
         }
       }
     }
@@ -285,7 +320,8 @@ export interface Database {
       waste_type_enum: 'organik' | 'anorganik' | 'campuran'
       waste_volume_enum: 'kurang_dari_30kg' | '30_50kg' | '50_100kg' | 'lebih_dari_100kg'
       hazard_risk_enum: 'tidak_ada' | 'rendah' | 'menengah' | 'tinggi'
-      campaign_status_enum: 'upcoming' | 'ongoing' | 'finished'
+      campaign_status_enum: 'upcoming' | 'ongoing' | 'finished' | 'cancelled'
+      notification_type_enum: 'report_status' | 'campaign_reminder' | 'campaign_update' | 'system'
       campaign_organizer_type_enum: 'personal' | 'organization'
       report_status_enum: 'pending' | 'approved' | 'rejected' | 'hazardous'
       role_enum: 'user' | 'admin'
