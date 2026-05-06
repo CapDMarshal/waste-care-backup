@@ -62,8 +62,8 @@ Mengestimasi berat (kg) murni dari foto 2D sangatlah sulit karena AI tidak bisa 
 ### B. Pengayaan Konteks Bahaya (Hazard Risk) via Geolocation API
 Saat ini AI hanya melihat gambar. Jika sampah medis berada di dekat rumah sakit, risiko bahayanya jauh lebih tinggi, namun AI tidak tahu di mana lokasi persisnya hanya dari foto.
 **Rencana Solusi:**
-- **Reverse Geocoding / Google Places API:** Sebelum mengirim data ke Vertex AI, Edge Function memanggil API Maps menggunakan `latitude` dan `longitude` pelapor untuk mendeteksi landmark terdekat.
-- **Contextual Prompting:** Sistem menyuntikkan data tersebut ke dalam prompt AI. (Contoh prompt: *"Perhatian: Sampah ini berlokasi 50 meter dari Rumah Sakit Umum. Tolong evaluasi hazard_risk dengan mempertimbangkan kemungkinan limbah medis berbahaya."*)
+- **Pemetaan Geolokasi Lokal (Fokus Wilayah Sleman):** Memasukkan dataset geolokasi spesifik seluruh fasilitas kesehatan dan rumah sakit di area Sleman ke dalam database spasial (PostGIS) kita.
+- **Reverse Geocoding Terintegrasi:** Sebelum mengirim data ke Vertex AI, sistem mengecek radius koordinat laporan terhadap dataset RS di Sleman. Jika berdekatan, sistem menyuntikkan data tersebut ke dalam prompt AI. (Contoh prompt: *"Perhatian: Sampah ini berlokasi 50 meter dari RSUD Sleman. Tolong evaluasi hazard_risk dengan mempertimbangkan kemungkinan limbah medis berbahaya."*)
 
 ### C. Self-Correction & Multi-Agent Validation
 Untuk meminimalisir halusinasi atau kesalahan klasifikasi awal dari model vision.
@@ -71,3 +71,16 @@ Untuk meminimalisir halusinasi atau kesalahan klasifikasi awal dari model vision
 - Terapkan alur **Multi-Step Verification**: 
   1. *Model 1 (Vision Fast)*: Ekstraksi fitur dasar dari gambar.
   2. *Model 2 (Reasoning/Pro)*: Menerima output JSON dari Model 1, konteks lokasi (sekolah/RS), dan gambar aslinya, lalu memverifikasi ulang apakah klasifikasi `hazard_risk` dan `waste_type` sudah tepat. Jika ada ketidaksesuaian logika, Model 2 akan mengoreksinya sebelum disimpan ke database.
+
+### D. Fitur Presensi Campaign Berbasis QR Code
+Sistem partisipasi campaign saat ini hanya mencatat pendaftaran secara digital, tanpa verifikasi fisik kehadiran di lapangan.
+**Rencana Solusi:**
+- **Sistem Check-In Lokasi:** Panitia/Penyelenggara campaign akan diberikan kode QR unik. Relawan yang hadir memindai kode QR tersebut melalui fitur "Scan QR" di aplikasi.
+- **Verifikasi Geofencing:** Aplikasi akan memverifikasi presensi berdasarkan jarak GPS pengguna dengan lokasi campaign saat mereka memindai QR Code, mencegah presensi palsu dari jarak jauh.
+
+### E. Fitur Tambahan Tingkat Lanjut (Eksplorasi Ekosistem WasteCare)
+Selain peningkatan AI dan presensi, aplikasi WasteCare dapat diekspansi menjadi platform manajemen lingkungan yang menyeluruh:
+1. **Sistem Gamifikasi & Reward (Poin/Voucher):** Memberikan poin bagi pengguna yang melaporkan sampah tervalidasi atau hadir di campaign (via QR Code). Poin dapat ditukar dengan voucher lokal atau saldo e-wallet.
+2. **Heatmap & Dashboard Analitik DLH:** Pemetaan visual titik rawan sampah liar (*illegal dumping*) di dasbor admin untuk membantu Dinas Lingkungan Hidup memprioritaskan rute pengangkutan reguler.
+3. **Integrasi Armada Pengangkut (Driver App):** Modul khusus untuk petugas kebersihan agar mendapatkan rute navigasi teroptimasi berdasarkan titik laporan sampah "Large Amount" dan "Hazardous" yang disetujui admin.
+4. **Deteksi Nilai Jual Sampah (Economic Value Estimator):** Memperluas kemampuan Vertex AI untuk tidak hanya mendeteksi bahaya, tetapi juga mengenali sampah daur ulang yang berharga (misal: tumpukan botol PET, kardus) dan mengestimasi potensi nilai jualnya ke Bank Sampah terdekat.
