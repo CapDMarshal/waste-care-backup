@@ -229,9 +229,7 @@ const MapTilerMapComponent: React.FC<MapTilerMapProps> = ({
             // Create marker element
             const el = document.createElement('div');
             el.className = 'marker';
-            el.style.position = 'relative';
-            el.style.width = '40px';
-            el.style.height = '52px';
+            el.style.position = 'absolute';
             el.style.display = 'flex';
             el.style.alignItems = 'center';
             el.style.justifyContent = 'center';
@@ -240,6 +238,8 @@ const MapTilerMapComponent: React.FC<MapTilerMapProps> = ({
             el.style.zIndex = '10';
             
             if (markerData.type === 'waste') {
+              el.style.width = '50px';
+              el.style.height = '50px';
               // Create waste marker with trash icon
               el.innerHTML = `
                 <img 
@@ -247,8 +247,8 @@ const MapTilerMapComponent: React.FC<MapTilerMapProps> = ({
                   alt="Trash" 
                   loading="lazy"
                   style="
-                    width: 50px;
-                    height: 50px;
+                    width: 100%;
+                    height: 100%;
                     object-fit: contain;
                     cursor: pointer;
                   " 
@@ -276,7 +276,7 @@ const MapTilerMapComponent: React.FC<MapTilerMapProps> = ({
             }
 
             // Add marker to map
-            const marker = new Marker({ element: el })
+            const marker = new Marker({ element: el, anchor: 'center' })
               .setLngLat(markerData.coordinates)
               .addTo(map.current);
             
@@ -377,7 +377,7 @@ const MapTilerMapComponent: React.FC<MapTilerMapProps> = ({
       el.className = 'user-location-marker';
       el.style.width = '24px';
       el.style.height = '24px';
-      el.style.position = 'relative';
+      el.style.position = 'absolute';
       
       // Inner dot (blue)
       el.innerHTML = `
