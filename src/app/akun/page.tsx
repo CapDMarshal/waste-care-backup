@@ -51,6 +51,9 @@ export default function AkunPage() {
         setLoggingOut(false);
         return;
       }
+      
+      // Redirect to homepage after successful logout
+      window.location.href = '/';
     } catch (error) {
       alert('Gagal logout. Silakan coba lagi.');
       setLoggingOut(false);

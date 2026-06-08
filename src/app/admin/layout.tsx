@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { requireAdmin } from '@/lib/adminGuard'
-import { LayoutDashboard, FileText, Flag, LogOut, ShieldAlert } from 'lucide-react'
+import { LayoutDashboard, FileText, Flag, ShieldAlert } from 'lucide-react'
+import AdminLogoutButton from './AdminLogoutButton'
 
 export const metadata = {
   title: 'Admin Dashboard - WasteCare',
@@ -65,13 +66,7 @@ export default async function AdminLayout({
         </nav>
 
         <div className="mt-auto hidden md:block pt-4 border-t border-green-700/50">
-          <Link 
-            href="/" 
-            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-green-700 transition-colors text-green-200"
-          >
-            <LogOut size={20} />
-            <span className="font-medium">Kembali ke App</span>
-          </Link>
+          <AdminLogoutButton />
         </div>
       </aside>
 
