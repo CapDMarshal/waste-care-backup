@@ -12,12 +12,12 @@ export const metadata: Metadata = {
   authors: [{ name: "WasteCare Team" }],
   creator: "WasteCare Team",
   publisher: "WasteCare Team",
-  applicationName: "WasteCare",
+  applicationName: "WasteCare Backup",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "WasteCare",
+    title: "WasteCare Backup",
     startupImage: "/icons/apple-touch-startup-image.png",
   },
   formatDetection: {
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
   other: {
     "apple-mobile-web-app-capable": "yes",
     "apple-mobile-web-app-status-bar-style": "default",
-    "apple-mobile-web-app-title": "WasteCare",
+    "apple-mobile-web-app-title": "WasteCare Backup",
     "mobile-web-app-capable": "yes",
     "msapplication-TileColor": "#16a34a",
     "msapplication-config": "/browserconfig.xml",

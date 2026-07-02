@@ -1,6 +1,6 @@
 {
-  "name": "WasteCare - Smart Waste Management",
-  "short_name": "WasteCare",
+  "name": "WasteCare Backup - Smart Waste Management",
+  "short_name": "WasteCare Backup",
   "description": "Smart waste management application for reporting and tracking waste issues in your community",
   "start_url": "/",
   "display": "standalone",
