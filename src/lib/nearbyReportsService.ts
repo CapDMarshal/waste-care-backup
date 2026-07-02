@@ -68,8 +68,12 @@ export async function getNearbyReports(
       throw new Error(error.message);
     }
 
-    const reports: ReportLocation[] = data ?? [];
-
+    const reports: ReportLocation[] = (data ?? [])
+      .filter((item: any) => item.status === 'approved')
+      .map((item: any) => ({
+      ...item,
+      distance_km: item.distance_km !== undefined ? item.distance_km : (item.distance ? item.distance / 1000 : 0)
+    }));
     return {
       success: true,
       data: {
@@ -124,7 +128,8 @@ export function formatLocationCategory(category: string): string {
   return labels[category] || category;
 }
 
-export function formatDistance(distanceKm: number): string {
+export function formatDistance(distanceKm: number | undefined): string {
+  if (distanceKm === undefined || isNaN(distanceKm)) return '0 m';
   if (distanceKm < 1) return `${Math.round(distanceKm * 1000)} m`;
-  return `${distanceKm.toFixed(1)} km`;
+  return `${Number(distanceKm).toFixed(1)} km`;
 }

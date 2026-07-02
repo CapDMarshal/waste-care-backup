@@ -2,10 +2,8 @@
 
 import React, { useEffect, useState, memo } from 'react';
 import {
-  fetchTopCities,
   fetchOverallStatistics,
   fetchWasteTypeStatistics,
-  type CityStatistic,
   type OverallStatistics,
   type WasteTypeStatistics
 } from '@/lib/statisticsService';
@@ -13,13 +11,11 @@ import {
 // Cache for statistics to avoid repeated API calls
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 const statisticsCache: {
-  cities?: { data: CityStatistic[], timestamp: number },
   overall?: { data: OverallStatistics, timestamp: number },
   waste?: { data: WasteTypeStatistics, timestamp: number }
 } = {};
 
 function StatisticsSection() {
-  const [topCities, setTopCities] = useState<CityStatistic[]>([]);
   const [overallStats, setOverallStats] = useState<OverallStatistics>({
     totalCampaignsCompleted: 0,
     totalParticipants: 0,
@@ -50,21 +46,16 @@ function StatisticsSection() {
 
       // Check cache first
       const now = Date.now();
-      const citiesFromCache = statisticsCache.cities && isCacheValid(statisticsCache.cities.timestamp);
       const overallFromCache = statisticsCache.overall && isCacheValid(statisticsCache.overall.timestamp);
       const wasteFromCache = statisticsCache.waste && isCacheValid(statisticsCache.waste.timestamp);
 
       // Use cache if available, otherwise fetch
-      const [cities, stats, waste] = await Promise.all([
-        citiesFromCache ? Promise.resolve(statisticsCache.cities!.data) : fetchTopCities(),
+      const [stats, waste] = await Promise.all([
         overallFromCache ? Promise.resolve(statisticsCache.overall!.data) : fetchOverallStatistics(),
         wasteFromCache ? Promise.resolve(statisticsCache.waste!.data) : fetchWasteTypeStatistics(),
       ]);
 
       // Update cache
-      if (!citiesFromCache) {
-        statisticsCache.cities = { data: cities, timestamp: now };
-      }
       if (!overallFromCache) {
         statisticsCache.overall = { data: stats, timestamp: now };
       }
@@ -72,7 +63,6 @@ function StatisticsSection() {
         statisticsCache.waste = { data: waste, timestamp: now };
       }
 
-      setTopCities(cities);
       setOverallStats(stats);
       setWasteStats(waste);
     } catch (err) {

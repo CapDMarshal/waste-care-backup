@@ -86,7 +86,7 @@ export async function fetchWasteTypeStatistics(): Promise<WasteTypeStatistics> {
       organic: Number(data?.organic || 0),
       inorganic: Number(data?.inorganic || 0),
       mixed: Number(data?.mixed || 0),
-      hazardous: Number(data?.risk_low || 0) + Number(data?.risk_medium || 0) + Number(data?.risk_high || 0),
+      hazardous: Number(data?.hazardous || 0),
       riskNone: Number(data?.risk_none || 0),
       riskLow: Number(data?.risk_low || 0),
       riskMedium: Number(data?.risk_medium || 0),

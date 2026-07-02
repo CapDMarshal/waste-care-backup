@@ -58,6 +58,7 @@ export default function MapsSection() {
           setStats(wasteStats);
         }
       } catch (error) {
+        console.error("Gagal memuat data MapsSection:", error);
       } finally {
         if (isMounted) {
           setLoading(false);
